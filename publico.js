@@ -6,13 +6,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let carrito = [];
-let todosLosProductos = []; 
+let todosLosProductos = [];
 
 // 1. LÓGICA DE MOSTRAR PRODUCTOS
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
+    // Si no tenemos productos, los traemos de Firebase
     if (todosLosProductos.length === 0) {
         try {
             const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
@@ -26,6 +27,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
         }
     }
 
+    // Filtrado
     const productosFiltrados = categoria === "Todos" 
         ? todosLosProductos 
         : todosLosProductos.filter(p => p.categoria === categoria);
@@ -54,7 +56,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     });
 }
 
-// 2. CARRITO Y FUNCIONES GLOBALES
+// 2. LÓGICA DE CARRITO
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -78,13 +80,13 @@ window.eliminarDelCarrito = (index) => {
     actualizarCarrito();
 };
 
+// 3. EXPOSICIÓN GLOBAL PARA HTML
 window.filtrarProductos = (cat) => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id') || "tienda-ejemplo";
+    const id = new URLSearchParams(window.location.search).get('id') || "tienda-ejemplo";
     mostrarTiendaPublica(id, cat);
 };
 
-// 3. INICIALIZACIÓN
+// 4. INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", () => {
     const guardado = localStorage.getItem("carrito");
     if (guardado) {
@@ -92,16 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
         actualizarCarrito();
     }
 
-    // Configurar botones de filtro
-    document.getElementById('btnTodos')?.addEventListener('click', () => window.filtrarProductos('Todos'));
-    document.getElementById('btnLogos')?.addEventListener('click', () => window.filtrarProductos('Logos'));
-    document.getElementById('btnRedes')?.addEventListener('click', () => window.filtrarProductos('Redes'));
-    document.getElementById('btnWeb')?.addEventListener('click', () => window.filtrarProductos('Web'));
-
-    // Iniciar con la tienda de la URL
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id') || "tienda-ejemplo";
-    mostrarTiendaPublica(id);
+    const id = new URLSearchParams(window.location.search).get('id') || "tienda-ejemplo";
+    mostrarTiendaPublica(id, "Todos");
 });
 
 document.getElementById("btnFinalizar")?.addEventListener("click", () => {
