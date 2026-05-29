@@ -14,6 +14,7 @@ async function cargarCatalogo() {
 
     try {
         const productosRef = collection(db, "productos");
+        // Asegúrate de que este "tienda-ejemplo" coincida con el ID que usas en el navegador
         const q = query(productosRef, where("tiendaId", "==", "tienda-ejemplo"));
         const querySnapshot = await getDocs(q);
         
@@ -33,9 +34,8 @@ async function cargarCatalogo() {
                 <p style="color: #666; font-style: italic;">${data.descripcion || ''}</p>
                 <button class="btn-editar" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Editar</button>
                 <button class="btn-eliminar" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Eliminar</button>
-            `;
+            </div>`; // <-- AQUI FALTABA EL </div> QUE CERRABA TU TARJETA
             
-            // Lógica de ELIMINAR
             div.querySelector(".btn-eliminar").addEventListener("click", async () => {
                 if (confirm("¿Eliminar este producto?")) {
                     await deleteDoc(doc(db, "productos", docSnap.id));
@@ -43,7 +43,6 @@ async function cargarCatalogo() {
                 }
             });
 
-            // Lógica de PREPARAR EDICIÓN
             div.querySelector(".btn-editar").addEventListener("click", () => {
                 idEnEdicion = docSnap.id;
                 document.getElementById("txtProdNombre").value = data.nombre;
@@ -67,13 +66,12 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
     const precio = document.getElementById("txtProdPrecio")?.value;
     const stock = document.getElementById("txtProdStock")?.value;
     const desc = document.getElementById("txtProdDesc")?.value;
-    const categoria = document.getElementById("txtProdCat")?.value; // Captura de categoría
+    const categoria = document.getElementById("txtProdCat")?.value;
     
     if (!nombre || !precio) return alert("Completa nombre y precio");
 
     try {
         if (idEnEdicion) {
-            // Actualizar
             await updateDoc(doc(db, "productos", idEnEdicion), { 
                 nombre, imagen, precio, stock, descripcion: desc, categoria 
             });
@@ -81,14 +79,13 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
             idEnEdicion = null;
             document.getElementById("btnCargarProducto").innerText = "Subir Producto a la Tienda";
         } else {
-            // Crear
+            // AQUÍ ES DONDE SE GUARDA EL TIENDAID
             await addDoc(collection(db, "productos"), { 
                 nombre, imagen, precio, stock, descripcion: desc, categoria, tiendaId: "tienda-ejemplo" 
             });
             alert("¡Guardado exitosamente!");
         }
 
-        // Limpiar formulario
         document.getElementById("txtProdNombre").value = "";
         document.getElementById("txtProdImagen").value = "";
         document.getElementById("txtProdPrecio").value = "";
@@ -99,5 +96,4 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
     } catch (e) { alert("Error: " + e.message); }
 });
 
-// Inicializar
 cargarCatalogo();
