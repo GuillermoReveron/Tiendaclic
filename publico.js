@@ -5,29 +5,48 @@ import { firebaseConfig } from "./config.js";
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let carrito = [];
+let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 let todosLosProductos = [];
 
-// 1. CARGA FORZADA DE PRODUCTOS
+// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO
+function actualizarCarrito() {
+    const contenedorCarrito = document.getElementById("contenedorCarrito");
+    const totalDiv = document.getElementById("totalCarrito");
+    
+    localStorage.setItem("carrito", JSON.stringify(carrito));
+    
+    if (contenedorCarrito) {
+        contenedorCarrito.innerHTML = carrito.length > 0 
+            ? carrito.map((p, index) => `
+                <div style="margin-bottom: 5px; border-bottom: 1px solid #ccc;">
+                    ${p.nombre} - $${p.precio} 
+                    <button onclick="eliminarDelCarrito(${index})">X</button>
+                </div>`).join("") 
+            : "<p>Tu carrito está vacío.</p>";
+    }
+    
+    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
+    if (totalDiv) totalDiv.innerText = `Total: $${total}`;
+}
+
+window.eliminarDelCarrito = (index) => {
+    carrito.splice(index, 1);
+    actualizarCarrito();
+};
+
+// 2. CARGA DE PRODUCTOS
 async function mostrarTiendaPublica(categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // Buscamos siempre por el ID fijo "tienda-ejemplo" para eliminar errores de URL
     const idFijo = "tienda-ejemplo";
 
     if (todosLosProductos.length === 0) {
         try {
-            console.log("Consultando Firebase para:", idFijo);
             const q = query(collection(db, "productos"), where("tiendaId", "==", idFijo));
             const snapshot = await getDocs(q);
-            snapshot.forEach((doc) => {
-                todosLosProductos.push(doc.data());
-            });
-            console.log("Productos encontrados en Firebase:", todosLosProductos.length);
-        } catch (e) { 
-            console.error("Error al conectar con Firebase:", e); 
-        }
+            snapshot.forEach((doc) => todosLosProductos.push(doc.data()));
+        } catch (e) { console.error("Error Firebase:", e); }
     }
 
     const filtrados = categoria === "Todos" 
@@ -36,40 +55,30 @@ async function mostrarTiendaPublica(categoria = "Todos") {
 
     contenedor.innerHTML = ""; 
     
-    if (filtrados.length === 0) {
-        contenedor.innerHTML = `<p>No hay productos en esta categoría (${categoria}).</p>`;
-        return;
-    }
-
     filtrados.forEach((data, index) => {
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
         div.innerHTML = `
             <h3>${data.nombre}</h3>
-            <p>Categoría: ${data.categoria}</p>
             <p>$${data.precio}</p>
-            <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
+            <button class="btn-verde" id="btn-${index}">Agregar al carrito</button>
         `;
         contenedor.appendChild(div);
         
-        div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
+        div.querySelector(`#btn-${index}`).addEventListener("click", () => {
             carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
-            localStorage.setItem("carrito", JSON.stringify(carrito));
+            actualizarCarrito();
             alert("Agregado: " + data.nombre);
         });
     });
 }
 
-// 2. INICIALIZACIÓN
+// 3. INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", () => {
-    // Carga inicial
+    actualizarCarrito();
     mostrarTiendaPublica("Todos");
     
-    // Conexión de botones
     document.querySelectorAll('.btn-filtro').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const cat = e.target.innerText;
-            mostrarTiendaPublica(cat);
-        });
+        btn.addEventListener('click', (e) => mostrarTiendaPublica(e.target.innerText));
     });
 });
