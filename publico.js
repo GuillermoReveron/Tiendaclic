@@ -1,28 +1,31 @@
-// Asegúrate de que esta variable esté fuera de la función, como ya la tienes
+// Asegúrate de que esta variable esté definida arriba en el archivo
 let todosLosProductos = []; 
 
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
+    // 1. Cargar desde Firebase si está vacía
     if (todosLosProductos.length === 0) {
-        const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-        const snap = await getDocs(q);
-        snap.forEach(d => todosLosProductos.push(d.data()));
+        try {
+            const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
+            const snap = await getDocs(q);
+            snap.forEach(d => todosLosProductos.push(d.data()));
+        } catch (error) {
+            console.error("Error al obtener productos:", error);
+        }
     }
 
-    // --- DEPURACIÓN: MUESTRA QUÉ CATEGORÍAS EXISTEN REALMENTE ---
+    // 2. Depuración
     const categoriasExistentes = [...new Set(todosLosProductos.map(p => p.categoria))];
     console.log("Categorías encontradas en base de datos:", categoriasExistentes);
-    // -----------------------------------------------------------
 
+    // 3. Filtrado
     const productosFiltrados = categoria === "Todos" 
         ? todosLosProductos 
         : todosLosProductos.filter(p => String(p.categoria).trim() === categoria.trim());
 
-    // ... resto del código igual ...
-};
-
+    // 4. Renderizado
     contenedor.innerHTML = "";
     
     if (productosFiltrados.length === 0) {
