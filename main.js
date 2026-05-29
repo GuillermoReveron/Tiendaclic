@@ -8,19 +8,23 @@ const db = getFirestore(app);
 let carrito = [];
 let todosLosProductos = [];
 
-// 1. MOTOR DE INICIALIZACIÓN (Kernel SaaS)
+// 1. MOTOR DE INICIALIZACIÓN
 async function inicializarTienda() {
     const urlParams = new URLSearchParams(window.location.search);
     const tiendaId = urlParams.get('id');
-
-    if (!tiendaId) return; // Si no hay ID, no hacemos nada (o mostramos admin)
+    if (!tiendaId) return;
 
     try {
         const configSnap = await getDoc(doc(db, "configuraciones", tiendaId));
         if (configSnap.exists()) {
-            const config = configSnap.data();
-            aplicarConfiguracion(config);
-            mostrarTiendaPublica(tiendaId);
+            aplicarConfiguracion(configSnap.data());
+            // Cargar productos una sola vez
+            const q = query(collection(db, "productos"), where("tiendaId", "==", tiendaId));
+            const querySnapshot = await getDocs(q);
+            todosLosProductos = []; // Limpiar antes de llenar
+            querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
+            
+            mostrarTiendaPublica("Todos");
         }
     } catch (e) { console.error("Error al inicializar:", e); }
 }
@@ -34,22 +38,22 @@ function aplicarConfiguracion(config) {
     document.title = config.nombreComercial || "Tienda Clic";
 }
 
-// 2. LÓGICA DE VISUALIZACIÓN
-async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
+// 2. LÓGICA DE VISUALIZACIÓN (CORREGIDA)
+function mostrarTiendaPublica(categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    if (todosLosProductos.length === 0) {
-        const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-        const querySnapshot = await getDocs(q);
-        querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
+    // Filtramos usando comparación robusta
+    const productosFiltrados = categoria === "Todos" 
+        ? todosLosProductos 
+        : todosLosProductos.filter(p => p.categoria.toLowerCase() === categoria.toLowerCase());
+
+    contenedor.innerHTML = ""; // LIMPIEZA TOTAL antes de renderizar
+    
+    if (productosFiltrados.length === 0) {
+        contenedor.innerHTML = "<p>No hay productos en esta categoría.</p>";
+        return;
     }
-
-    const productosFiltrados = categoria === "Todos" ? todosLosProductos : todosLosProductos.filter(p => p.categoria === categoria);
-
-    contenedor.innerHTML = productosFiltrados.length === 0 
-        ? "<p>No hay productos en esta categoría.</p>" 
-        : "";
 
     productosFiltrados.forEach((data, index) => {
         const div = document.createElement("div");
@@ -61,6 +65,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
         `;
         contenedor.appendChild(div);
+        
         div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
             carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
             actualizarCarrito();
@@ -68,7 +73,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     });
 }
 
-// 3. CARRITO Y EXPOSICIÓN DE FUNCIONES
+// 3. CARRITO Y EXPOSICIÓN
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -85,16 +90,13 @@ function actualizarCarrito() {
     if(totalDiv) totalDiv.innerText = `Total: $${carrito.reduce((sum, p) => sum + p.precio, 0)}`;
 }
 
-// EXPONEMOS AL MUNDO (Para evitar el error de "is not defined")
 window.eliminarDelCarrito = (index) => {
     carrito.splice(index, 1);
     actualizarCarrito();
 };
 
 window.filtrarProductos = (cat) => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tiendaId = urlParams.get('id');
-    mostrarTiendaPublica(tiendaId, cat);
+    mostrarTiendaPublica(cat);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -104,4 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
         actualizarCarrito();
     }
     inicializarTienda();
+    
+    // Conectar botones manualmente para asegurar que no fallen
+    ['Todos', 'Logos', 'Redes', 'Web'].forEach(cat => {
+        document.getElementById('btn' + cat)?.addEventListener('click', () => window.filtrarProductos(cat));
+    });
 });
