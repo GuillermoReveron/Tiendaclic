@@ -8,6 +8,7 @@ const db = getFirestore(app);
 let carrito = [];
 let todosLosProductos = []; 
 
+// 1. LÓGICA DE MOSTRAR PRODUCTOS
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
@@ -39,7 +40,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
         div.innerHTML = `
-            <img src="${data.imagen || 'https://via.placeholder.com/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+            <img src="${data.imagen || 'https://placehold.co/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
             <h3>${data.nombre}</h3>
             <p class="precio">$${data.precio}</p>
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
@@ -53,6 +54,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     });
 }
 
+// 2. CARRITO Y FUNCIONES GLOBALES
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -63,42 +65,50 @@ function actualizarCarrito() {
         ? carrito.map((p, index) => `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
                 <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
-                    Eliminar
-                </button>
+                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
             </div>`).join("") 
         : "<p>Tu carrito está vacío.</p>";
     
     const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    totalDiv.innerText = `Total: $${total}`;
+    if (totalDiv) totalDiv.innerText = `Total: $${total}`;
 }
 
-// Función global para eliminar ítems
 window.eliminarDelCarrito = (index) => {
     carrito.splice(index, 1);
     actualizarCarrito();
 };
 
-// Lógica para enviar el pedido por WhatsApp
-document.getElementById("btnFinalizar")?.addEventListener("click", () => {
-    if (carrito.length === 0) return alert("El carrito está vacío");
-    
-    let mensaje = "Hola, quiero realizar el siguiente pedido:%0A%0A";
-    carrito.forEach(p => mensaje += `- ${p.nombre}: $${p.precio}%0A`);
-    
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    mensaje += `%0A*Total: $${total}*`;
-    
-    window.open(`https://wa.me/+5492281310771?text=${mensaje}`, "_blank");
-});
+window.filtrarProductos = (cat) => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id') || "tienda-ejemplo";
+    mostrarTiendaPublica(id, cat);
+};
 
-window.filtrarProductos = (cat) => mostrarTiendaPublica("tienda-ejemplo", cat);
-
+// 3. INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", () => {
     const guardado = localStorage.getItem("carrito");
     if (guardado) {
         carrito = JSON.parse(guardado);
         actualizarCarrito();
     }
-    mostrarTiendaPublica("tienda-ejemplo");
+
+    // Configurar botones de filtro
+    document.getElementById('btnTodos')?.addEventListener('click', () => window.filtrarProductos('Todos'));
+    document.getElementById('btnLogos')?.addEventListener('click', () => window.filtrarProductos('Logos'));
+    document.getElementById('btnRedes')?.addEventListener('click', () => window.filtrarProductos('Redes'));
+    document.getElementById('btnWeb')?.addEventListener('click', () => window.filtrarProductos('Web'));
+
+    // Iniciar con la tienda de la URL
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id') || "tienda-ejemplo";
+    mostrarTiendaPublica(id);
+});
+
+document.getElementById("btnFinalizar")?.addEventListener("click", () => {
+    if (carrito.length === 0) return alert("El carrito está vacío");
+    let mensaje = "Hola, quiero realizar el siguiente pedido:%0A%0A";
+    carrito.forEach(p => mensaje += `- ${p.nombre}: $${p.precio}%0A`);
+    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
+    mensaje += `%0A*Total: $${total}*`;
+    window.open(`https://wa.me/+5492281310771?text=${mensaje}`, "_blank");
 });

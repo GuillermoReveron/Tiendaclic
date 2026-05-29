@@ -43,3 +43,8 @@ button:hover { opacity: 0.9; }
 .total-texto { font-weight: bold; font-size: 1.2em; margin-top: 10px; }
 
 .btn-ia { background-color: #6f42c1; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+/* Feedback visual para filtros */
+.btn-filtro:active, .btn-filtro:focus {
+    background-color: var(--color-primario);
+    outline: none;
+}

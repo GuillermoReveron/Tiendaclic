@@ -13,10 +13,7 @@ async function inicializarTienda() {
     const urlParams = new URLSearchParams(window.location.search);
     const tiendaId = urlParams.get('id');
 
-    if (!tiendaId) {
-        document.body.innerHTML = "<h1>Error: Tienda no especificada.</h1>";
-        return;
-    }
+    if (!tiendaId) return; // Si no hay ID, no hacemos nada (o mostramos admin)
 
     try {
         const configSnap = await getDoc(doc(db, "configuraciones", tiendaId));
@@ -24,15 +21,10 @@ async function inicializarTienda() {
             const config = configSnap.data();
             aplicarConfiguracion(config);
             mostrarTiendaPublica(tiendaId);
-        } else {
-            document.body.innerHTML = "<h1>Error: Tienda no encontrada.</h1>";
         }
-    } catch (e) {
-        console.error("Error al inicializar tienda:", e);
-    }
+    } catch (e) { console.error("Error al inicializar:", e); }
 }
 
-// 2. MOTOR DE ESTILOS (Aplica colores desde Firestore)
 function aplicarConfiguracion(config) {
     const root = document.documentElement;
     if (config.colores) {
@@ -42,7 +34,7 @@ function aplicarConfiguracion(config) {
     document.title = config.nombreComercial || "Tienda Clic";
 }
 
-// 3. TU LÓGICA DE CATÁLOGO (Integrada)
+// 2. LÓGICA DE VISUALIZACIÓN
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
@@ -56,14 +48,14 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const productosFiltrados = categoria === "Todos" ? todosLosProductos : todosLosProductos.filter(p => p.categoria === categoria);
 
     contenedor.innerHTML = productosFiltrados.length === 0 
-        ? "<p>No hay productos disponibles.</p>" 
+        ? "<p>No hay productos en esta categoría.</p>" 
         : "";
 
     productosFiltrados.forEach((data, index) => {
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
         div.innerHTML = `
-            <img src="${data.imagen || 'https://via.placeholder.com/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+            <img src="${data.imagen || 'https://placehold.co/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
             <h3>${data.nombre}</h3>
             <p class="precio">$${data.precio}</p>
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
@@ -76,7 +68,7 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     });
 }
 
-// 4. TU LÓGICA DE CARRITO (Se mantiene igual)
+// 3. CARRITO Y EXPOSICIÓN DE FUNCIONES
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -86,17 +78,23 @@ function actualizarCarrito() {
         ? carrito.map((p, index) => `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
                 <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
+                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">X</button>
             </div>`).join("") 
         : "<p>Tu carrito está vacío.</p>";
     
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    if(totalDiv) totalDiv.innerText = `Total: $${total}`;
+    if(totalDiv) totalDiv.innerText = `Total: $${carrito.reduce((sum, p) => sum + p.precio, 0)}`;
 }
 
+// EXPONEMOS AL MUNDO (Para evitar el error de "is not defined")
 window.eliminarDelCarrito = (index) => {
     carrito.splice(index, 1);
     actualizarCarrito();
+};
+
+window.filtrarProductos = (cat) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tiendaId = urlParams.get('id');
+    mostrarTiendaPublica(tiendaId, cat);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -105,5 +103,5 @@ document.addEventListener("DOMContentLoaded", () => {
         carrito = JSON.parse(guardado);
         actualizarCarrito();
     }
-    inicializarTienda(); // Arranca el motor
+    inicializarTienda();
 });

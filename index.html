@@ -55,10 +55,10 @@
         <h2 class="titulo-azul">👁️ Vidriera Pública</h2>
         
         <div class="cont-filtros">
-            <button class="btn-filtro" onclick="filtrarProductos('Todos')">Todos</button>
-            <button class="btn-filtro" onclick="filtrarProductos('Logos')">Logos</button>
-            <button class="btn-filtro" onclick="filtrarProductos('Redes')">Redes</button>
-            <button class="btn-filtro" onclick="filtrarProductos('Web')">Web</button>
+            <button class="btn-filtro" id="btnTodos">Todos</button>
+            <button class="btn-filtro" id="btnLogos">Logos</button>
+            <button class="btn-filtro" id="btnRedes">Redes</button>
+            <button class="btn-filtro" id="btnWeb">Web</button>
         </div>
 
         <div id="contenedorCatalogoPublico" class="catalogo"></div>
@@ -77,6 +77,7 @@
     <script type="module" src="./config.js"></script>
     <script type="module" src="./app.js"></script>
     <script type="module" src="./publico.js"></script>
+    <script type="module" src="./main.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
@@ -90,7 +91,6 @@
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             if (!id) return;
-
             try {
                 const snap = await getDoc(doc(db, "configuraciones", id));
                 if (snap.exists()) {
