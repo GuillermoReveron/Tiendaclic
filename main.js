@@ -6,90 +6,56 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let carrito = [];
-let todosLosProductos = []; 
+let todosLosProductos = [];
 
-// Función de visualización pura (sin borrar la lógica de carga original)
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // Si no hay productos en memoria, cargamos de Firebase
+    console.log("Cargando productos para:", idTienda, "Categoría:", categoria);
+
     if (todosLosProductos.length === 0) {
         try {
             const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
-        } catch (e) {
-            console.error("Error al cargar productos:", e);
-            return;
-        }
+            const snapshot = await getDocs(q);
+            snapshot.forEach((doc) => todosLosProductos.push(doc.data()));
+            console.log("Productos encontrados en Firebase:", todosLosProductos.length);
+        } catch (e) { console.error("Error Firebase:", e); }
     }
 
-    // Filtrado seguro: si no hay productos, mostramos mensaje
-    const productosFiltrados = categoria === "Todos" 
+    const filtrados = categoria === "Todos" 
         ? todosLosProductos 
-        : todosLosProductos.filter(p => p.categoria === categoria);
+        : todosLosProductos.filter(p => p.categoria && p.categoria.trim() === categoria.trim());
 
     contenedor.innerHTML = ""; 
-
-    if (productosFiltrados.length === 0) {
-        contenedor.innerHTML = "<p>No hay productos en esta categoría.</p>";
+    
+    if (filtrados.length === 0) {
+        contenedor.innerHTML = "<p>No hay productos en esta categoría (" + categoria + ").</p>";
         return;
     }
 
-    productosFiltrados.forEach((data, index) => {
+    filtrados.forEach((data, index) => {
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
-        div.innerHTML = `
-            <img src="${data.imagen || 'https://placehold.co/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
-            <h3>${data.nombre}</h3>
-            <p class="precio">$${data.precio}</p>
-            <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
-        `;
+        div.innerHTML = `<h3>${data.nombre}</h3><p>$${data.precio}</p>`;
         contenedor.appendChild(div);
-
-        div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
-            carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
-            actualizarCarrito();
-        });
     });
 }
 
-function actualizarCarrito() {
-    const contenedorCarrito = document.getElementById("contenedorCarrito");
-    const totalDiv = document.getElementById("totalCarrito");
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    
-    contenedorCarrito.innerHTML = carrito.length > 0 
-        ? carrito.map((p, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
-                <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
-            </div>`).join("") 
-        : "<p>Tu carrito está vacío.</p>";
-    
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    if (totalDiv) totalDiv.innerText = `Total: $${total}`;
-}
-
-window.eliminarDelCarrito = (index) => {
-    carrito.splice(index, 1);
-    actualizarCarrito();
-};
-
 window.filtrarProductos = (cat) => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const id = new URLSearchParams(window.location.search).get('id');
     mostrarTiendaPublica(id, cat);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    const guardado = localStorage.getItem("carrito");
-    if (guardado) {
-        carrito = JSON.parse(guardado);
-        actualizarCarrito();
-    }
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
+    const id = new URLSearchParams(window.location.search).get('id');
     if (id) mostrarTiendaPublica(id, "Todos");
+    
+    // Conexión segura de botones
+    document.querySelectorAll('.btn-filtro').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const cat = e.target.innerText;
+            window.filtrarProductos(cat);
+        });
+    });
 });
