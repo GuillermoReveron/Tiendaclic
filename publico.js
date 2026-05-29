@@ -1,52 +1,75 @@
-// Asegúrate de que esta variable esté definida arriba en el archivo
-let todosLosProductos = []; 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
 
-async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let carrito = [];
+let todosLosProductos = [];
+
+// 1. CARGA FORZADA DE PRODUCTOS
+async function mostrarTiendaPublica(categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // 1. Cargar desde Firebase si está vacía
+    // Buscamos siempre por el ID fijo "tienda-ejemplo" para eliminar errores de URL
+    const idFijo = "tienda-ejemplo";
+
     if (todosLosProductos.length === 0) {
         try {
-            const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-            const snap = await getDocs(q);
-            snap.forEach(d => todosLosProductos.push(d.data()));
-        } catch (error) {
-            console.error("Error al obtener productos:", error);
+            console.log("Consultando Firebase para:", idFijo);
+            const q = query(collection(db, "productos"), where("tiendaId", "==", idFijo));
+            const snapshot = await getDocs(q);
+            snapshot.forEach((doc) => {
+                todosLosProductos.push(doc.data());
+            });
+            console.log("Productos encontrados en Firebase:", todosLosProductos.length);
+        } catch (e) { 
+            console.error("Error al conectar con Firebase:", e); 
         }
     }
 
-    // 2. Depuración
-    const categoriasExistentes = [...new Set(todosLosProductos.map(p => p.categoria))];
-    console.log("Categorías encontradas en base de datos:", categoriasExistentes);
-
-    // 3. Filtrado
-    const productosFiltrados = categoria === "Todos" 
+    const filtrados = categoria === "Todos" 
         ? todosLosProductos 
-        : todosLosProductos.filter(p => String(p.categoria).trim() === categoria.trim());
+        : todosLosProductos.filter(p => p.categoria && p.categoria.trim() === categoria.trim());
 
-    // 4. Renderizado
-    contenedor.innerHTML = "";
+    contenedor.innerHTML = ""; 
     
-    if (productosFiltrados.length === 0) {
-        contenedor.innerHTML = `<p>No hay productos en la categoría: ${categoria}</p>`;
+    if (filtrados.length === 0) {
+        contenedor.innerHTML = `<p>No hay productos en esta categoría (${categoria}).</p>`;
         return;
     }
 
-    productosFiltrados.forEach((data, index) => {
+    filtrados.forEach((data, index) => {
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
         div.innerHTML = `
-            <img src="${data.imagen || 'https://placehold.co/200'}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
             <h3>${data.nombre}</h3>
-            <p class="precio">$${data.precio}</p>
+            <p>Categoría: ${data.categoria}</p>
+            <p>$${data.precio}</p>
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
         `;
         contenedor.appendChild(div);
-
+        
         div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
             carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
-            actualizarCarrito();
+            localStorage.setItem("carrito", JSON.stringify(carrito));
+            alert("Agregado: " + data.nombre);
         });
     });
 }
+
+// 2. INICIALIZACIÓN
+document.addEventListener("DOMContentLoaded", () => {
+    // Carga inicial
+    mostrarTiendaPublica("Todos");
+    
+    // Conexión de botones
+    document.querySelectorAll('.btn-filtro').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const cat = e.target.innerText;
+            mostrarTiendaPublica(cat);
+        });
+    });
+});
