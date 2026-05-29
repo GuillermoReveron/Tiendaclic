@@ -6,50 +6,32 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let carrito = [];
-let todosLosProductos = [];
+let todosLosProductos = []; 
 
-// 1. MOTOR DE INICIALIZACIÓN
-async function inicializarTienda() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tiendaId = urlParams.get('id');
-    if (!tiendaId) return;
-
-    try {
-        const configSnap = await getDoc(doc(db, "configuraciones", tiendaId));
-        if (configSnap.exists()) {
-            aplicarConfiguracion(configSnap.data());
-            // Cargar productos una sola vez
-            const q = query(collection(db, "productos"), where("tiendaId", "==", tiendaId));
-            const querySnapshot = await getDocs(q);
-            todosLosProductos = []; // Limpiar antes de llenar
-            querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
-            
-            mostrarTiendaPublica("Todos");
-        }
-    } catch (e) { console.error("Error al inicializar:", e); }
-}
-
-function aplicarConfiguracion(config) {
-    const root = document.documentElement;
-    if (config.colores) {
-        root.style.setProperty('--color-primario', config.colores.primario);
-        root.style.setProperty('--color-secundario', config.colores.secundario);
-    }
-    document.title = config.nombreComercial || "Tienda Clic";
-}
-
-// 2. LÓGICA DE VISUALIZACIÓN (CORREGIDA)
-function mostrarTiendaPublica(categoria = "Todos") {
+// Función de visualización pura (sin borrar la lógica de carga original)
+async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // Filtramos usando comparación robusta
+    // Si no hay productos en memoria, cargamos de Firebase
+    if (todosLosProductos.length === 0) {
+        try {
+            const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
+        } catch (e) {
+            console.error("Error al cargar productos:", e);
+            return;
+        }
+    }
+
+    // Filtrado seguro: si no hay productos, mostramos mensaje
     const productosFiltrados = categoria === "Todos" 
         ? todosLosProductos 
-        : todosLosProductos.filter(p => p.categoria.toLowerCase() === categoria.toLowerCase());
+        : todosLosProductos.filter(p => p.categoria === categoria);
 
-    contenedor.innerHTML = ""; // LIMPIEZA TOTAL antes de renderizar
-    
+    contenedor.innerHTML = ""; 
+
     if (productosFiltrados.length === 0) {
         contenedor.innerHTML = "<p>No hay productos en esta categoría.</p>";
         return;
@@ -65,7 +47,7 @@ function mostrarTiendaPublica(categoria = "Todos") {
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
         `;
         contenedor.appendChild(div);
-        
+
         div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
             carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
             actualizarCarrito();
@@ -73,7 +55,6 @@ function mostrarTiendaPublica(categoria = "Todos") {
     });
 }
 
-// 3. CARRITO Y EXPOSICIÓN
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -83,11 +64,12 @@ function actualizarCarrito() {
         ? carrito.map((p, index) => `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
                 <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">X</button>
+                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
             </div>`).join("") 
         : "<p>Tu carrito está vacío.</p>";
     
-    if(totalDiv) totalDiv.innerText = `Total: $${carrito.reduce((sum, p) => sum + p.precio, 0)}`;
+    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
+    if (totalDiv) totalDiv.innerText = `Total: $${total}`;
 }
 
 window.eliminarDelCarrito = (index) => {
@@ -96,7 +78,9 @@ window.eliminarDelCarrito = (index) => {
 };
 
 window.filtrarProductos = (cat) => {
-    mostrarTiendaPublica(cat);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    mostrarTiendaPublica(id, cat);
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -105,10 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
         carrito = JSON.parse(guardado);
         actualizarCarrito();
     }
-    inicializarTienda();
-    
-    // Conectar botones manualmente para asegurar que no fallen
-    ['Todos', 'Logos', 'Redes', 'Web'].forEach(cat => {
-        document.getElementById('btn' + cat)?.addEventListener('click', () => window.filtrarProductos(cat));
-    });
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (id) mostrarTiendaPublica(id, "Todos");
 });
