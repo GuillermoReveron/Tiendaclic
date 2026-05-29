@@ -1,39 +1,63 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let carrito = [];
-let todosLosProductos = []; 
+let todosLosProductos = [];
 
+// 1. MOTOR DE INICIALIZACIÓN (Kernel SaaS)
+async function inicializarTienda() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tiendaId = urlParams.get('id');
+
+    if (!tiendaId) {
+        document.body.innerHTML = "<h1>Error: Tienda no especificada.</h1>";
+        return;
+    }
+
+    try {
+        const configSnap = await getDoc(doc(db, "configuraciones", tiendaId));
+        if (configSnap.exists()) {
+            const config = configSnap.data();
+            aplicarConfiguracion(config);
+            mostrarTiendaPublica(tiendaId);
+        } else {
+            document.body.innerHTML = "<h1>Error: Tienda no encontrada.</h1>";
+        }
+    } catch (e) {
+        console.error("Error al inicializar tienda:", e);
+    }
+}
+
+// 2. MOTOR DE ESTILOS (Aplica colores desde Firestore)
+function aplicarConfiguracion(config) {
+    const root = document.documentElement;
+    if (config.colores) {
+        root.style.setProperty('--color-primario', config.colores.primario);
+        root.style.setProperty('--color-secundario', config.colores.secundario);
+    }
+    document.title = config.nombreComercial || "Tienda Clic";
+}
+
+// 3. TU LÓGICA DE CATÁLOGO (Integrada)
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
     if (todosLosProductos.length === 0) {
-        try {
-            const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((docSnap) => {
-                todosLosProductos.push(docSnap.data());
-            });
-        } catch (e) {
-            console.error("Error al cargar productos:", e);
-            return;
-        }
+        const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((docSnap) => todosLosProductos.push(docSnap.data()));
     }
 
-    const productosFiltrados = categoria === "Todos" 
-        ? todosLosProductos 
-        : todosLosProductos.filter(p => p.categoria === categoria);
+    const productosFiltrados = categoria === "Todos" ? todosLosProductos : todosLosProductos.filter(p => p.categoria === categoria);
 
-    contenedor.innerHTML = "";
-    if (productosFiltrados.length === 0) {
-        contenedor.innerHTML = "<p>No hay productos en esta categoría.</p>";
-        return;
-    }
+    contenedor.innerHTML = productosFiltrados.length === 0 
+        ? "<p>No hay productos disponibles.</p>" 
+        : "";
 
     productosFiltrados.forEach((data, index) => {
         const div = document.createElement("div");
@@ -45,7 +69,6 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
             <button class="btn-verde" id="btn-comprar-${index}">Agregar al carrito</button>
         `;
         contenedor.appendChild(div);
-
         div.querySelector(`#btn-comprar-${index}`).addEventListener("click", () => {
             carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
             actualizarCarrito();
@@ -53,46 +76,28 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     });
 }
 
+// 4. TU LÓGICA DE CARRITO (Se mantiene igual)
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
-    
     localStorage.setItem("carrito", JSON.stringify(carrito));
     
     contenedorCarrito.innerHTML = carrito.length > 0 
         ? carrito.map((p, index) => `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
                 <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">
-                    Eliminar
-                </button>
+                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
             </div>`).join("") 
         : "<p>Tu carrito está vacío.</p>";
     
     const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    totalDiv.innerText = `Total: $${total}`;
+    if(totalDiv) totalDiv.innerText = `Total: $${total}`;
 }
 
-// Función global para eliminar ítems
 window.eliminarDelCarrito = (index) => {
     carrito.splice(index, 1);
     actualizarCarrito();
 };
-
-// Lógica para enviar el pedido por WhatsApp
-document.getElementById("btnFinalizar")?.addEventListener("click", () => {
-    if (carrito.length === 0) return alert("El carrito está vacío");
-    
-    let mensaje = "Hola, quiero realizar el siguiente pedido:%0A%0A";
-    carrito.forEach(p => mensaje += `- ${p.nombre}: $${p.precio}%0A`);
-    
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    mensaje += `%0A*Total: $${total}*`;
-    
-    window.open(`https://wa.me/+5492281310771?text=${mensaje}`, "_blank");
-});
-
-window.filtrarProductos = (cat) => mostrarTiendaPublica("tienda-ejemplo", cat);
 
 document.addEventListener("DOMContentLoaded", () => {
     const guardado = localStorage.getItem("carrito");
@@ -100,5 +105,5 @@ document.addEventListener("DOMContentLoaded", () => {
         carrito = JSON.parse(guardado);
         actualizarCarrito();
     }
-    mostrarTiendaPublica("tienda-ejemplo");
+    inicializarTienda(); // Arranca el motor
 });

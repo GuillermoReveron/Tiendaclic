@@ -1,78 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-NDGP3CZB');</script>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TiendaClic - Panel Completo</title>
-    <style>
-    /* Estructura general */
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; }
-    
-    /* Grid de Catálogo */
-    .catalogo { 
-        max-width: 1000px; 
-        margin: 0 auto; 
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-        gap: 25px; 
-    }
-
-    /* Tarjeta de Producto */
-    .tarjeta-producto { 
-        background: white; 
-        padding: 20px; 
-        border-radius: 15px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-        border-top: 5px solid #28a745; 
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    /* Efecto al pasar el mouse */
-    .tarjeta-producto:hover { 
-        transform: translateY(-10px); 
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15); 
-    }
-
-    .tarjeta-producto h3 { margin: 0 0 10px 0; color: #333; font-size: 1.25rem; }
-    .tarjeta-producto .precio { font-size: 1.4rem; font-weight: bold; color: #28a745; margin-bottom: 10px; }
-    .tarjeta-producto .desc { font-size: 0.95rem; color: #666; line-height: 1.5; margin-bottom: 15px; }
-
-    /* Estilos del Panel Admin */
-    .contenedor { max-width: 500px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 40px auto; }
-    h1, h2 { color: #007bff; text-align: center; margin-bottom: 20px; }
-    .campo { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-    input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-    
-    /* Botones */
-    button { width: 100%; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    .btn-verde { background-color: #28a745; }
-    .btn-azul { background-color: #007bff; }
-</style>
+    <title>TiendaClic - Profesional</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NDGP3CZB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    
     <div class="contenedor">
         <h1>🚀 Alta de Tienda</h1>
+        <div class="campo"><label>Nombre del Negocio:</label><input type="text" id="txtNombre" placeholder="Ej: Update Studio"></div>
+        <div class="campo"><label>Subdominio:</label><input type="text" id="txtSubdominio" placeholder="Ej: updatestudio"></div>
         <div class="campo">
-            <label for="txtNombre">Nombre del Negocio:</label>
-            <input type="text" id="txtNombre" placeholder="Ej: Update Studio Benito Juarez">
-        </div>
-        <div class="campo">
-            <label for="txtSubdominio">Subdominio deseado:</label>
-            <input type="text" id="txtSubdominio" placeholder="Ej: updatestudio">
-        </div>
-        <div class="campo">
-            <label for="selectPlan">Plan:</label>
+            <label>Plan:</label>
             <select id="selectPlan">
                 <option value="Prueba 30 días">Prueba Gratis (30 días)</option>
                 <option value="Plan Inicial">Plan Inicial</option>
@@ -80,47 +21,57 @@
             </select>
         </div>
         <button id="btnCrear" class="btn-azul">Registrar Mi Tienda</button>
-        <div id="mensaje" class="mensaje"></div>
-    </div>
-<div class="contenedor">
-    <h1>Cargar Producto (Panel Admin)</h1>
-    
-    <div class="campo">
-        <label for="txtProdNombre">Nombre del Producto:</label>
-        <input type="text" id="txtProdNombre" placeholder="Ej: Diseño de Logo">
-    </div>
-    
-    <div class="campo">
-        <label for="txtProdImagen">Link de la imagen:</label>
-        <input type="text" id="txtProdImagen" placeholder="Ej: https://ejemplo.com/foto.jpg">
     </div>
 
-    <div class="campo">
-        <label for="txtProdPrecio">Precio ($):</label>
-        <input type="number" id="txtProdPrecio" placeholder="Ej: 15000">
+    <div class="contenedor">
+        <h1>Cargar Producto</h1>
+        <div class="campo"><label>Nombre:</label><input type="text" id="txtProdNombre"></div>
+        <div class="campo"><label>Link Imagen:</label><input type="text" id="txtProdImagen"></div>
+        <div class="campo"><label>Precio ($):</label><input type="number" id="txtProdPrecio"></div>
+        <div class="campo"><label>Stock:</label><input type="number" id="txtProdStock"></div>
+        <div class="campo">
+            <label>Categoría:</label>
+            <select id="txtProdCat">
+                <option value="General">General</option>
+                <option value="Logos">Logos</option>
+                <option value="Redes">Redes Sociales</option>
+                <option value="Web">Web</option>
+            </select>
+        </div>
+        <div class="campo"><label>Descripción:</label><textarea id="txtProdDesc"></textarea></div>
+        
+        <button id="btnGenerarIA" class="btn-ia">✨ Generar descripción con IA</button>
+        <button id="btnCargarProducto" class="btn-verde">Subir Producto</button>
     </div>
 
-    <div class="campo">
-        <label for="txtProdStock">Stock:</label>
-        <input type="number" id="txtProdStock" placeholder="Ej: 10">
+    <div class="contenedor-ancho">
+        <h2>🛒 Catálogo Admin</h2>
+        <div id="contenedorCatalogo" class="catalogo"></div>
     </div>
 
-    <div class="campo">
-        <label for="txtProdDesc">Descripción:</label>
-        <textarea id="txtProdDesc"></textarea>
-    </div>
+    <hr class="divisor">
 
-    <button id="btnCargarProducto" class="btn-verde">Subir Producto a la Tienda</button>
-</div> <div style="max-width: 900px; margin: 0 auto; width: 100%;">
-    <h2 style="text-align: left; color: #333;">🛒 Catálogo Admin (Gestionar)</h2>
-    <div id="contenedorCatalogo" class="catalogo"></div>
-</div>
+    <div class="contenedor-ancho">
+        <h2 class="titulo-azul">👁️ Vidriera Pública</h2>
+        
+        <div class="cont-filtros">
+            <button class="btn-filtro" onclick="filtrarProductos('Todos')">Todos</button>
+            <button class="btn-filtro" onclick="filtrarProductos('Logos')">Logos</button>
+            <button class="btn-filtro" onclick="filtrarProductos('Redes')">Redes</button>
+            <button class="btn-filtro" onclick="filtrarProductos('Web')">Web</button>
+        </div>
 
-    <hr style="width: 100%; border: 0; border-top: 2px solid #ccc; margin: 40px 0;">
-
-    <div style="max-width: 900px; margin: 0 auto; width: 100%;">
-        <h2 style="text-align: left; color: #007bff;">👁️ Vidriera Pública (Lo que ve tu cliente)</h2>
         <div id="contenedorCatalogoPublico" class="catalogo"></div>
+        
+        <div class="cont-carrito">
+            <h2>🛒 Tu Carrito</h2>
+            <div id="contenedorCarrito"><p>Tu carrito está vacío.</p></div>
+            <div id="totalCarrito" class="total-texto"></div>
+            
+            <button id="btnFinalizar" class="btn-verde" style="background-color: #25d366; margin-top: 15px;">
+                📦 Finalizar Pedido por WhatsApp
+            </button>
+        </div>
     </div>
 
     <script type="module" src="app.js"></script>

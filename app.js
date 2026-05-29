@@ -27,6 +27,7 @@ async function cargarCatalogo() {
             div.innerHTML = `
                 <h3 style="color: #2e7d32; margin-top: 0;">${data.nombre}</h3>
                 <img src="${data.imagen || ''}" style="max-width: 100px; display: block; margin-bottom: 10px;">
+                <p><strong>Categoría:</strong> ${data.categoria || 'General'}</p>
                 <p style="font-size: 1.1em; font-weight: bold; color: #333;">Precio: $${data.precio}</p>
                 <p style="color: #444;">Stock: ${data.stock || '0'}</p>
                 <p style="color: #666; font-style: italic;">${data.descripcion || ''}</p>
@@ -50,6 +51,7 @@ async function cargarCatalogo() {
                 document.getElementById("txtProdPrecio").value = data.precio;
                 document.getElementById("txtProdStock").value = data.stock;
                 document.getElementById("txtProdDesc").value = data.descripcion;
+                document.getElementById("txtProdCat").value = data.categoria || "General";
                 document.getElementById("btnCargarProducto").innerText = "Actualizar Producto";
             });
 
@@ -61,10 +63,11 @@ async function cargarCatalogo() {
 // --- FUNCIÓN PARA GUARDAR O ACTUALIZAR ---
 document.getElementById("btnCargarProducto")?.addEventListener("click", async () => {
     const nombre = document.getElementById("txtProdNombre")?.value;
-    const imagen = document.getElementById("txtProdImagen")?.value; // Nuevo campo capturado
+    const imagen = document.getElementById("txtProdImagen")?.value;
     const precio = document.getElementById("txtProdPrecio")?.value;
     const stock = document.getElementById("txtProdStock")?.value;
     const desc = document.getElementById("txtProdDesc")?.value;
+    const categoria = document.getElementById("txtProdCat")?.value; // Captura de categoría
     
     if (!nombre || !precio) return alert("Completa nombre y precio");
 
@@ -72,7 +75,7 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
         if (idEnEdicion) {
             // Actualizar
             await updateDoc(doc(db, "productos", idEnEdicion), { 
-                nombre, imagen, precio, stock, descripcion: desc 
+                nombre, imagen, precio, stock, descripcion: desc, categoria 
             });
             alert("Producto actualizado");
             idEnEdicion = null;
@@ -80,7 +83,7 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
         } else {
             // Crear
             await addDoc(collection(db, "productos"), { 
-                nombre, imagen, precio, stock, descripcion: desc, tiendaId: "tienda-ejemplo" 
+                nombre, imagen, precio, stock, descripcion: desc, categoria, tiendaId: "tienda-ejemplo" 
             });
             alert("¡Guardado exitosamente!");
         }
@@ -91,6 +94,7 @@ document.getElementById("btnCargarProducto")?.addEventListener("click", async ()
         document.getElementById("txtProdPrecio").value = "";
         document.getElementById("txtProdStock").value = "";
         document.getElementById("txtProdDesc").value = "";
+        document.getElementById("txtProdCat").value = "General";
         cargarCatalogo();
     } catch (e) { alert("Error: " + e.message); }
 });

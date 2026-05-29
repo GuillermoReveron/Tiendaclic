@@ -1,0 +1,45 @@
+/* style.css - Optimizado para SaaS Tienda Clic */
+
+:root {
+    /* Variables por defecto (fallback) */
+    --color-primario: #28a745;   /* Verde por defecto */
+    --color-secundario: #007bff; /* Azul por defecto */
+    --color-fondo: #f4f7f6;
+    --color-texto: #333;
+}
+
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: var(--color-fondo); color: var(--color-texto); }
+
+.catalogo { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+
+.tarjeta-producto { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-top: 5px solid var(--color-primario); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.tarjeta-producto:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+.tarjeta-producto h3 { margin: 0 0 10px 0; font-size: 1.25rem; }
+.tarjeta-producto .precio { font-size: 1.4rem; font-weight: bold; color: var(--color-primario); margin-bottom: 10px; }
+
+.contenedor { max-width: 500px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 40px auto; }
+.contenedor-ancho { max-width: 900px; margin: 0 auto; }
+
+h1, h2 { color: var(--color-secundario); text-align: center; margin-bottom: 20px; }
+.titulo-azul { color: var(--color-secundario); }
+
+.campo { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+
+button { width: 100%; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: opacity 0.2s; }
+button:hover { opacity: 0.9; }
+
+/* Botones dinámicos */
+.btn-verde { background-color: var(--color-primario); }
+.btn-azul { background-color: var(--color-secundario); }
+.btn-filtro { width: auto; padding: 8px 15px; background-color: #6c757d; margin: 0 5px; }
+
+.cont-filtros { text-align: center; margin-bottom: 20px; }
+
+.divisor { margin: 40px 0; border: 0; border-top: 2px solid #ccc; }
+.cont-carrito { margin-top: 50px; padding: 20px; border-top: 2px solid var(--color-secundario); }
+.total-texto { font-weight: bold; font-size: 1.2em; margin-top: 10px; }
+
+.btn-ia { background-color: #6f42c1; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
