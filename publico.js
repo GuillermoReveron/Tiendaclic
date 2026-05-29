@@ -5,27 +5,23 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // Si la lista maestra está vacía, la llenamos de Firebase
     if (todosLosProductos.length === 0) {
-        try {
-            const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((docSnap) => {
-                todosLosProductos.push(docSnap.data());
-            });
-            console.log("Productos cargados en memoria:", todosLosProductos.length);
-        } catch (e) {
-            console.error("Error al cargar productos:", e);
-            return;
-        }
+        const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
+        const snap = await getDocs(q);
+        snap.forEach(d => todosLosProductos.push(d.data()));
     }
 
-    // Filtrado: comparamos quitando espacios y en minúsculas para que no falle por un detalle
+    // --- DEPURACIÓN: MUESTRA QUÉ CATEGORÍAS EXISTEN REALMENTE ---
+    const categoriasExistentes = [...new Set(todosLosProductos.map(p => p.categoria))];
+    console.log("Categorías encontradas en base de datos:", categoriasExistentes);
+    // -----------------------------------------------------------
+
     const productosFiltrados = categoria === "Todos" 
         ? todosLosProductos 
-        : todosLosProductos.filter(p => 
-            p.categoria && p.categoria.trim().toLowerCase() === categoria.trim().toLowerCase()
-          );
+        : todosLosProductos.filter(p => String(p.categoria).trim() === categoria.trim());
+
+    // ... resto del código igual ...
+};
 
     contenedor.innerHTML = "";
     
