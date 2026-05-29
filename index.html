@@ -11,25 +11,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TiendaClic - Panel Completo</title>
     <style>
-        .catalogo { max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; width: 100%; }
-        .tarjeta-producto { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-top: 4px solid #28a745; }
-        .tarjeta-producto h3 { margin: 0 0 10px 0; color: #333; }
-        .tarjeta-producto .precio { font-size: 18px; font-weight: bold; color: #28a745; margin-bottom: 10px; }
-        .tarjeta-producto .desc { font-size: 14px; color: #666; line-height: 1.4; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background-color: #eef2f3; color: #333; display: flex; flex-direction: column; gap: 30px; }
-        .contenedor { max-width: 450px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 0 auto; width: 100%; }
-        h1, h2 { color: #007bff; text-align: center; margin-bottom: 20px; }
-        h1 { font-size: 24px; }
-        h2 { font-size: 20px; color: #28a745; }
-        .campo { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        textarea { resize: vertical; height: 80px; }
-        button { width: 100%; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-azul { background-color: #007bff; }
-        .btn-verde { background-color: #28a745; }
-        .mensaje { margin-top: 20px; text-align: center; font-weight: bold; font-size: 14px; }
-    </style>
+    /* Estructura general */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; }
+    
+    /* Grid de Catálogo */
+    .catalogo { 
+        max-width: 1000px; 
+        margin: 0 auto; 
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+        gap: 25px; 
+    }
+
+    /* Tarjeta de Producto */
+    .tarjeta-producto { 
+        background: white; 
+        padding: 20px; 
+        border-radius: 15px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        border-top: 5px solid #28a745; 
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    /* Efecto al pasar el mouse */
+    .tarjeta-producto:hover { 
+        transform: translateY(-10px); 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15); 
+    }
+
+    .tarjeta-producto h3 { margin: 0 0 10px 0; color: #333; font-size: 1.25rem; }
+    .tarjeta-producto .precio { font-size: 1.4rem; font-weight: bold; color: #28a745; margin-bottom: 10px; }
+    .tarjeta-producto .desc { font-size: 0.95rem; color: #666; line-height: 1.5; margin-bottom: 15px; }
+
+    /* Estilos del Panel Admin */
+    .contenedor { max-width: 500px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin: 40px auto; }
+    h1, h2 { color: #007bff; text-align: center; margin-bottom: 20px; }
+    .campo { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+    
+    /* Botones */
+    button { width: 100%; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    .btn-verde { background-color: #28a745; }
+    .btn-azul { background-color: #007bff; }
+</style>
 </head>
 
 <body>
@@ -56,32 +82,39 @@
         <button id="btnCrear" class="btn-azul">Registrar Mi Tienda</button>
         <div id="mensaje" class="mensaje"></div>
     </div>
-
-    <div class="contenedor">
-        <h2>📦 Cargar Producto (Panel Admin)</h2>
-        <div class="campo">
-            <label for="txtProdNombre">Nombre del Producto:</label>
-            <input type="text" id="txtProdNombre" placeholder="Ej: Diseño de Logo">
-        </div>
-        <div class="campo">
-            <label for="txtProdPrecio">Precio ($):</label>
-            <input type="number" id="txtProdPrecio" placeholder="Ej: 15000">
-        </div>
-        <div class="campo">
-            <label for="txtProdStock">Stock:</label>
-            <input type="number" id="txtProdStock" placeholder="Ej: 10">
-        </div>
-        <div class="campo">
-            <label for="txtProdDesc">Descripción:</label>
-            <textarea id="txtProdDesc"></textarea>
-        </div>
-        <button id="btnCargarProducto" class="btn-verde">Subir Producto a la Tienda</button>
+<div class="contenedor">
+    <h1>Cargar Producto (Panel Admin)</h1>
+    
+    <div class="campo">
+        <label for="txtProdNombre">Nombre del Producto:</label>
+        <input type="text" id="txtProdNombre" placeholder="Ej: Diseño de Logo">
+    </div>
+    
+    <div class="campo">
+        <label for="txtProdImagen">Link de la imagen:</label>
+        <input type="text" id="txtProdImagen" placeholder="Ej: https://ejemplo.com/foto.jpg">
     </div>
 
-    <div style="max-width: 900px; margin: 0 auto; width: 100%;">
-        <h2 style="text-align: left; color: #333;">🛒 Catálogo Admin (Gestionar)</h2>
-        <div id="contenedorCatalogo" class="catalogo"></div>
+    <div class="campo">
+        <label for="txtProdPrecio">Precio ($):</label>
+        <input type="number" id="txtProdPrecio" placeholder="Ej: 15000">
     </div>
+
+    <div class="campo">
+        <label for="txtProdStock">Stock:</label>
+        <input type="number" id="txtProdStock" placeholder="Ej: 10">
+    </div>
+
+    <div class="campo">
+        <label for="txtProdDesc">Descripción:</label>
+        <textarea id="txtProdDesc"></textarea>
+    </div>
+
+    <button id="btnCargarProducto" class="btn-verde">Subir Producto a la Tienda</button>
+</div> <div style="max-width: 900px; margin: 0 auto; width: 100%;">
+    <h2 style="text-align: left; color: #333;">🛒 Catálogo Admin (Gestionar)</h2>
+    <div id="contenedorCatalogo" class="catalogo"></div>
+</div>
 
     <hr style="width: 100%; border: 0; border-top: 2px solid #ccc; margin: 40px 0;">
 
