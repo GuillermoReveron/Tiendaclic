@@ -1,39 +1,50 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+// publico.js - Versión Completa
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./config.js";
 
+// Inicialización
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-console.log("Vidriera pública cargada con éxito");
-// ... aquí sigue toda tu lógica para mostrar el catálogo (contenedorCatalogoPublico, etc.) ...
-
-// Esta función carga productos solo de la tienda que le digas
+// Función principal de carga
 async function mostrarTiendaPublica(idTienda) {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
-    if (!contenedor) return;
+    
+    // Verificación de seguridad: si no existe el contenedor, no ejecutamos nada
+    if (!contenedor) {
+        console.warn("El contenedor 'contenedorCatalogoPublico' no existe en este HTML.");
+        return;
+    }
 
     try {
+        // Consulta filtrada por tiendaId
         const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
         const querySnapshot = await getDocs(q);
         
-        contenedor.innerHTML = "";
+        contenedor.innerHTML = ""; // Limpiamos antes de cargar
+        
+        // Verificación de existencia de datos
+        if (querySnapshot.empty) {
+            contenedor.innerHTML = "<p>No hay productos disponibles en esta tienda.</p>";
+            return;
+        }
         
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
+            // Inyectamos el HTML usando las clases de tu CSS
             contenedor.innerHTML += `
-                <div style="border: 1px solid #ccc; padding: 20px; margin: 10px; border-radius: 10px; text-align: center; font-family: sans-serif;">
+                <div class="tarjeta-producto">
                     <h3>${data.nombre}</h3>
-                    <p style="font-size: 1.2em; color: #28a745; font-weight: bold;">$${data.precio}</p>
-                    <p style="color: #666;">${data.descripcion || ''}</p>
-                    <button style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Comprar</button>
+                    <p class="precio">$${data.precio}</p>
+                    <p class="desc">${data.descripcion || ''}</p>
+                    <button class="btn-verde">Comprar</button>
                 </div>`;
         });
     } catch (e) {
-        console.error("Error al cargar la vidriera:", e);
+        console.error("Error crítico al cargar la vidriera:", e);
     }
 }
 
-// Para usarla en tu HTML, solo llamas a: mostrarTiendaPublica("tienda-ejemplo");
-// Puedes poner esto al final de tu archivo o llamarlo desde el HTML
+// Ejecución
 mostrarTiendaPublica("tienda-ejemplo");
