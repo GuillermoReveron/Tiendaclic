@@ -76,5 +76,33 @@
 
     <script type="module" src="app.js"></script>
     <script type="module" src="publico.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+        import { firebaseConfig } from "./config_ok.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function arrancarMotor() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (!id) return;
+
+            try {
+                const snap = await getDoc(doc(db, "configuraciones", id));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.colores) {
+                        document.documentElement.style.setProperty('--color-primario', data.colores.primario);
+                        document.documentElement.style.setProperty('--color-secundario', data.colores.secundario);
+                    }
+                    document.title = data.nombreComercial;
+                }
+            } catch (e) { console.error("Error al cargar config:", e); }
+        }
+        arrancarMotor();
+    </script>
 </body>
 </html>
