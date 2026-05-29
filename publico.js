@@ -8,7 +8,7 @@ const db = getFirestore(app);
 let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 let todosLosProductos = [];
 
-// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO
+// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO (CORREGIDA)
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -16,23 +16,37 @@ function actualizarCarrito() {
     localStorage.setItem("carrito", JSON.stringify(carrito));
     
     if (contenedorCarrito) {
-        contenedorCarrito.innerHTML = carrito.length > 0 
-            ? carrito.map((p, index) => `
-                <div style="margin-bottom: 5px; border-bottom: 1px solid #ccc;">
-                    ${p.nombre} - $${p.precio} 
-                    <button onclick="eliminarDelCarrito(${index})">X</button>
-                </div>`).join("") 
-            : "<p>Tu carrito está vacío.</p>";
+        contenedorCarrito.innerHTML = ""; // Limpiamos el contenedor
+        
+        if (carrito.length === 0) {
+            contenedorCarrito.innerHTML = "<p>Tu carrito está vacío.</p>";
+        } else {
+            carrito.forEach((p, index) => {
+                const itemDiv = document.createElement("div");
+                itemDiv.style = "display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #ccc;";
+                
+                itemDiv.innerHTML = `<span>${p.nombre} - $${p.precio}</span>`;
+                
+                // Botón "X" visible y preciso
+                const btnEliminar = document.createElement("button");
+                btnEliminar.innerText = "✕";
+                btnEliminar.style = "background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;";
+                
+                // Evento directo sin usar onclick global
+                btnEliminar.addEventListener("click", () => {
+                    carrito.splice(index, 1);
+                    actualizarCarrito();
+                });
+                
+                itemDiv.appendChild(btnEliminar);
+                contenedorCarrito.appendChild(itemDiv);
+            });
+        }
     }
     
     const total = carrito.reduce((sum, p) => sum + p.precio, 0);
     if (totalDiv) totalDiv.innerText = `Total: $${total}`;
 }
-
-window.eliminarDelCarrito = (index) => {
-    carrito.splice(index, 1);
-    actualizarCarrito();
-};
 
 // 2. CARGA DE PRODUCTOS
 async function mostrarTiendaPublica(categoria = "Todos") {
