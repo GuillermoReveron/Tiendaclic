@@ -1,19 +1,11 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+// Asegúrate de que esta variable esté fuera de la función, como ya la tienes
+let todosLosProductos = []; 
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let carrito = [];
-let todosLosProductos = [];
-
-// 1. LÓGICA DE MOSTRAR PRODUCTOS
 async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
 
-    // Si no tenemos productos, los traemos de Firebase
+    // Si la lista maestra está vacía, la llenamos de Firebase
     if (todosLosProductos.length === 0) {
         try {
             const q = query(collection(db, "productos"), where("tiendaId", "==", idTienda));
@@ -21,20 +13,24 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
             querySnapshot.forEach((docSnap) => {
                 todosLosProductos.push(docSnap.data());
             });
+            console.log("Productos cargados en memoria:", todosLosProductos.length);
         } catch (e) {
             console.error("Error al cargar productos:", e);
             return;
         }
     }
 
-    // Filtrado
+    // Filtrado: comparamos quitando espacios y en minúsculas para que no falle por un detalle
     const productosFiltrados = categoria === "Todos" 
         ? todosLosProductos 
-        : todosLosProductos.filter(p => p.categoria === categoria);
+        : todosLosProductos.filter(p => 
+            p.categoria && p.categoria.trim().toLowerCase() === categoria.trim().toLowerCase()
+          );
 
     contenedor.innerHTML = "";
+    
     if (productosFiltrados.length === 0) {
-        contenedor.innerHTML = "<p>No hay productos en esta categoría.</p>";
+        contenedor.innerHTML = `<p>No hay productos en la categoría: ${categoria}</p>`;
         return;
     }
 
@@ -55,54 +51,3 @@ async function mostrarTiendaPublica(idTienda, categoria = "Todos") {
         });
     });
 }
-
-// 2. LÓGICA DE CARRITO
-function actualizarCarrito() {
-    const contenedorCarrito = document.getElementById("contenedorCarrito");
-    const totalDiv = document.getElementById("totalCarrito");
-    
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    
-    contenedorCarrito.innerHTML = carrito.length > 0 
-        ? carrito.map((p, index) => `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; border-bottom: 1px solid #eee;">
-                <span>${p.nombre} - <strong>$${p.precio}</strong></span>
-                <button onclick="eliminarDelCarrito(${index})" style="background: #ff4d4d; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer;">Eliminar</button>
-            </div>`).join("") 
-        : "<p>Tu carrito está vacío.</p>";
-    
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    if (totalDiv) totalDiv.innerText = `Total: $${total}`;
-}
-
-window.eliminarDelCarrito = (index) => {
-    carrito.splice(index, 1);
-    actualizarCarrito();
-};
-
-// 3. EXPOSICIÓN GLOBAL PARA HTML
-window.filtrarProductos = (cat) => {
-    const id = new URLSearchParams(window.location.search).get('id') || "tienda-ejemplo";
-    mostrarTiendaPublica(id, cat);
-};
-
-// 4. INICIALIZACIÓN
-document.addEventListener("DOMContentLoaded", () => {
-    const guardado = localStorage.getItem("carrito");
-    if (guardado) {
-        carrito = JSON.parse(guardado);
-        actualizarCarrito();
-    }
-
-    const id = new URLSearchParams(window.location.search).get('id') || "tienda-ejemplo";
-    mostrarTiendaPublica(id, "Todos");
-});
-
-document.getElementById("btnFinalizar")?.addEventListener("click", () => {
-    if (carrito.length === 0) return alert("El carrito está vacío");
-    let mensaje = "Hola, quiero realizar el siguiente pedido:%0A%0A";
-    carrito.forEach(p => mensaje += `- ${p.nombre}: $${p.precio}%0A`);
-    const total = carrito.reduce((sum, p) => sum + p.precio, 0);
-    mensaje += `%0A*Total: $${total}*`;
-    window.open(`https://wa.me/+5492281310771?text=${mensaje}`, "_blank");
-});
