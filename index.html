@@ -8,22 +8,13 @@
 </head>
 
 <body>
-    <div class="contenedor">
-        <h1>🚀 Alta de Tienda</h1>
-        <div class="campo"><label>Nombre del Negocio:</label><input type="text" id="txtNombre" placeholder="Ej: Update Studio"></div>
-        <div class="campo"><label>Subdominio:</label><input type="text" id="txtSubdominio" placeholder="Ej: updatestudio"></div>
-        <div class="campo">
-            <label>Plan:</label>
-            <select id="selectPlan">
-                <option value="Prueba 30 días">Prueba Gratis (30 días)</option>
-                <option value="Plan Inicial">Plan Inicial</option>
-                <option value="Plan Pro">Plan Pro</option>
-            </select>
-        </div>
-        <button id="btnCrear" class="btn-azul">Registrar Mi Tienda</button>
+    <div id="loginAdmin" class="contenedor" style="text-align: center;">
+        <h2>🔐 Acceso Administrativo</h2>
+        <input type="password" id="inputPass" placeholder="Contraseña de la tienda">
+        <button onclick="verificarAcceso()" class="btn-azul">Acceder al Panel</button>
     </div>
 
-    <div class="contenedor">
+    <div id="panelAdmin" class="contenedor" style="display: none;">
         <h1>Cargar Producto</h1>
         <div class="campo"><label>Nombre:</label><input type="text" id="txtProdNombre"></div>
         <div class="campo"><label>Link Imagen:</label><input type="text" id="txtProdImagen"></div>
@@ -52,31 +43,21 @@
     <hr class="divisor">
 
     <h2 class="titulo-azul">👁️ Vidriera Pública</h2>
-
-<div id="contFiltros" class="cont-filtros"></div>
-
-<div id="contenedorCatalogoPublico" class="catalogo"></div>
-<div id="contFiltros" class="cont-filtros"></div>
-    </div>
-
-        <div id="contenedorCatalogoPublico" class="catalogo"></div>
+    <div id="contFiltros" class="cont-filtros"></div>
+    <div id="contenedorCatalogoPublico" class="catalogo"></div>
         
-        <div class="cont-carrito">
-            <h2>🛒 Tu Carrito</h2>
-            <div id="contenedorCarrito"><p>Tu carrito está vacío.</p></div>
-            <div id="totalCarrito" class="total-texto"></div>
-            
-            <button id="btnFinalizar" class="btn-verde" style="background-color: #25d366; margin-top: 15px;">
-                📦 Finalizar Pedido por WhatsApp
-            </button>
-        </div>
+    <div class="cont-carrito">
+        <h2>🛒 Tu Carrito</h2>
+        <div id="contenedorCarrito"><p>Tu carrito está vacío.</p></div>
+        <div id="totalCarrito" class="total-texto"></div>
+        <button id="btnFinalizar" class="btn-verde" style="background-color: #25d366; margin-top: 15px;">
+            📦 Finalizar Pedido por WhatsApp
+        </button>
     </div>
 
     <script type="module" src="./config.js"></script>
-    <script type="module" src="./app.js"></script>
-    <script type="module" src="./publico.js"></script>
-    <script type="module" src="./main.js"></script>
-
+    <script type="module" src="./tienda.js"></script>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -85,6 +66,24 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Función de seguridad expuesta al window para que el botón pueda verla
+        window.verificarAcceso = async () => {
+            const passIngresada = document.getElementById("inputPass").value;
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+
+            if (!id) return alert("Error: ID de tienda no encontrado");
+
+            const snap = await getDoc(doc(db, "configuraciones", id));
+            if (snap.exists() && snap.data().password === passIngresada) {
+                document.getElementById("panelAdmin").style.display = "block";
+                document.getElementById("loginAdmin").style.display = "none";
+            } else {
+                alert("Contraseña incorrecta");
+            }
+        };
+
+        // Carga de configuración inicial
         async function arrancarMotor() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');

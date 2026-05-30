@@ -1,40 +1,81 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc, doc, query, where, getDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let idEnEdicion = null;
+const params = new URLSearchParams(window.location.search);
+const idTiendaActiva = params.get('id');
 
-// --- FUNCIÓN PARA CARGAR EL CATÁLOGO ---
+// --- 1. PROTECCIÓN DE ACCESO ---
+window.verificarAcceso = async () => {
+    if (!idTiendaActiva) return alert("Error: ID de tienda no definido.");
+    
+    const passIngresada = document.getElementById("inputPass").value;
+    const snap = await getDoc(doc(db, "configuraciones", idTiendaActiva));
+
+    if (snap.exists() && snap.data().password === passIngresada) {
+        document.getElementById("panelAdmin").style.display = "block";
+        document.getElementById("loginAdmin").style.display = "none";
+        cargarCatalogo();
+    } else {
+        alert("Contraseña incorrecta");
+    }
+};
+
+// --- 2. INTEGRACIÓN DE IA (GEMINI) ---
+async function generarDescripcionIA() {
+    const nombre = document.getElementById("txtProdNombre")?.value;
+    const precio = document.getElementById("txtProdPrecio")?.value;
+    
+    if (!nombre) return alert("Primero escribe el nombre del producto para generar la descripción.");
+
+    const btn = document.getElementById("btnGenerarIA");
+    const originalText = btn.innerText;
+    btn.innerText = "IA trabajando...";
+    btn.disabled = true;
+
+    try {
+        // Aquí conectaremos con la API de Gemini próximamente.
+        // Simulamos la respuesta profesional de la IA:
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simula tiempo de red
+        const respuestaIA = `✨ Presentamos ${nombre}. La solución definitiva que combina calidad y precio ($${precio}). Perfecto para quienes buscan destacar. ¡No te quedes sin el tuyo!`;
+        
+        document.getElementById("txtProdDesc").value = respuestaIA;
+    } catch (e) {
+        alert("Error al contactar con la IA");
+        console.error(e);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+document.getElementById("btnGenerarIA")?.addEventListener("click", generarDescripcionIA);
+
+// --- 3. CARGA DE CATÁLOGO ---
 async function cargarCatalogo() {
     const contenedor = document.getElementById("contenedorCatalogo");
     if (!contenedor) return;
 
     try {
-        const productosRef = collection(db, "productos");
-        // Asegúrate de que este "tienda-ejemplo" coincida con el ID que usas en el navegador
-        const q = query(productosRef, where("tiendaId", "==", "tienda-ejemplo"));
+        const q = query(collection(db, "productos"), where("tiendaId", "==", idTiendaActiva));
         const querySnapshot = await getDocs(q);
         
         contenedor.innerHTML = "";
-        
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const div = document.createElement("div");
-            div.style = "border: 2px solid #28a745; background-color: #e8f5e9; padding: 15px; margin: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);";
-            
+            div.className = "tarjeta-producto";
             div.innerHTML = `
-                <h3 style="color: #2e7d32; margin-top: 0;">${data.nombre}</h3>
-                <img src="${data.imagen || ''}" style="max-width: 100px; display: block; margin-bottom: 10px;">
-                <p><strong>Categoría:</strong> ${data.categoria || 'General'}</p>
-                <p style="font-size: 1.1em; font-weight: bold; color: #333;">Precio: $${data.precio}</p>
-                <p style="color: #444;">Stock: ${data.stock || '0'}</p>
-                <p style="color: #666; font-style: italic;">${data.descripcion || ''}</p>
-                <button class="btn-editar" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Editar</button>
-                <button class="btn-eliminar" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Eliminar</button>
-            </div>`; // <-- AQUI FALTABA EL </div> QUE CERRABA TU TARJETA
+                <h3>${data.nombre}</h3>
+                <img src="${data.imagen || ''}" style="max-width: 100px;">
+                <p><strong>Stock:</strong> ${data.stock || '0'}</p>
+                <p><strong>Precio:</strong> $${data.precio}</p>
+                <button class="btn-editar">Editar</button>
+                <button class="btn-eliminar">Eliminar</button>
+            `;
             
             div.querySelector(".btn-eliminar").addEventListener("click", async () => {
                 if (confirm("¿Eliminar este producto?")) {
@@ -49,51 +90,35 @@ async function cargarCatalogo() {
                 document.getElementById("txtProdImagen").value = data.imagen || "";
                 document.getElementById("txtProdPrecio").value = data.precio;
                 document.getElementById("txtProdStock").value = data.stock;
-                document.getElementById("txtProdDesc").value = data.descripcion;
+                document.getElementById("txtProdDesc").value = data.descripcion || "";
                 document.getElementById("txtProdCat").value = data.categoria || "General";
                 document.getElementById("btnCargarProducto").innerText = "Actualizar Producto";
             });
-
             contenedor.appendChild(div);
         });
     } catch (e) { console.error("Error al cargar:", e); }
 }
 
-// --- FUNCIÓN PARA GUARDAR O ACTUALIZAR ---
+// --- 4. GUARDAR O ACTUALIZAR ---
 document.getElementById("btnCargarProducto")?.addEventListener("click", async () => {
-    const nombre = document.getElementById("txtProdNombre")?.value;
-    const imagen = document.getElementById("txtProdImagen")?.value;
-    const precio = document.getElementById("txtProdPrecio")?.value;
-    const stock = document.getElementById("txtProdStock")?.value;
-    const desc = document.getElementById("txtProdDesc")?.value;
-    const categoria = document.getElementById("txtProdCat")?.value;
+    const productoData = {
+        nombre: document.getElementById("txtProdNombre")?.value,
+        imagen: document.getElementById("txtProdImagen")?.value,
+        precio: parseFloat(document.getElementById("txtProdPrecio")?.value),
+        stock: document.getElementById("txtProdStock")?.value || 0,
+        descripcion: document.getElementById("txtProdDesc")?.value,
+        categoria: document.getElementById("txtProdCat")?.value,
+        tiendaId: idTiendaActiva
+    };
     
-    if (!nombre || !precio) return alert("Completa nombre y precio");
+    if (!productoData.nombre || !productoData.precio) return alert("Completa nombre y precio");
 
     try {
         if (idEnEdicion) {
-            await updateDoc(doc(db, "productos", idEnEdicion), { 
-                nombre, imagen, precio, stock, descripcion: desc, categoria 
-            });
+            await updateDoc(doc(db, "productos", idEnEdicion), productoData);
             alert("Producto actualizado");
             idEnEdicion = null;
-            document.getElementById("btnCargarProducto").innerText = "Subir Producto a la Tienda";
+            document.getElementById("btnCargarProducto").innerText = "Subir Producto";
         } else {
-            // AQUÍ ES DONDE SE GUARDA EL TIENDAID
-            await addDoc(collection(db, "productos"), { 
-                nombre, imagen, precio, stock, descripcion: desc, categoria, tiendaId: "tienda-ejemplo" 
-            });
+            await addDoc(collection(db, "productos"), productoData);
             alert("¡Guardado exitosamente!");
-        }
-
-        document.getElementById("txtProdNombre").value = "";
-        document.getElementById("txtProdImagen").value = "";
-        document.getElementById("txtProdPrecio").value = "";
-        document.getElementById("txtProdStock").value = "";
-        document.getElementById("txtProdDesc").value = "";
-        document.getElementById("txtProdCat").value = "General";
-        cargarCatalogo();
-    } catch (e) { alert("Error: " + e.message); }
-});
-
-cargarCatalogo();
