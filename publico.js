@@ -8,14 +8,12 @@ const db = getFirestore(app);
 let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 let todosLosProductos = [];
 
-// NUEVA FUNCIÓN: Generar botones de filtro dinámicamente
+// FUNCIÓN: Generar botones de filtro dinámicamente
 function generarFiltros() {
     const contenedorFiltros = document.getElementById("contFiltros");
     if (!contenedorFiltros) return;
 
-    // Extraemos categorías únicas (quitando duplicados)
     const categorias = ["Todos", ...new Set(todosLosProductos.map(p => p.categoria || "Sin categoría"))];
-
     contenedorFiltros.innerHTML = ""; 
 
     categorias.forEach(cat => {
@@ -27,7 +25,7 @@ function generarFiltros() {
     });
 }
 
-// NUEVA FUNCIÓN: Generar y abrir WhatsApp
+// FUNCIÓN: Generar y abrir WhatsApp
 function enviarPorWhatsApp() {
     let mensaje = "¡Hola! Quiero hacer el siguiente pedido:%0A%0A";
     let total = 0;
@@ -45,7 +43,7 @@ function enviarPorWhatsApp() {
     window.open(url, '_blank');
 }
 
-// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO
+// FUNCIÓN: Actualizar carrito y persistencia
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -89,7 +87,7 @@ function actualizarCarrito() {
     if (totalDiv) totalDiv.innerText = `Total: $${total}`;
 }
 
-// 2. CARGA DE PRODUCTOS
+// FUNCIÓN: Carga de productos con validación de stock
 async function mostrarTiendaPublica(categoria = "Todos") {
     const contenedor = document.getElementById("contenedorCatalogoPublico");
     if (!contenedor) return;
@@ -111,32 +109,37 @@ async function mostrarTiendaPublica(categoria = "Todos") {
     contenedor.innerHTML = ""; 
     
     filtrados.forEach((data, index) => {
+        // Lógica de stock
+        const stock = parseInt(data.stock) || 0;
+        const hayStock = stock > 0;
+        const botonTexto = hayStock ? "Agregar al carrito" : "Sin Stock";
+        const claseBoton = hayStock ? "btn-verde" : "btn-desactivado";
+
         const div = document.createElement("div");
         div.className = "tarjeta-producto";
         div.innerHTML = `
+            <img src="${data.imagen || 'https://via.placeholder.com/250'}" alt="${data.nombre}">
             <h3>${data.nombre}</h3>
             <p>$${data.precio}</p>
-            <button class="btn-verde" id="btn-${index}">Agregar al carrito</button>
+            <button class="${claseBoton}" id="btn-${index}" ${hayStock ? "" : "disabled"}>
+                ${botonTexto}
+            </button>
         `;
         contenedor.appendChild(div);
         
-        div.querySelector(`#btn-${index}`).addEventListener("click", () => {
-            carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
-            actualizarCarrito();
-            alert("Agregado: " + data.nombre);
-        });
+        if (hayStock) {
+            div.querySelector(`#btn-${index}`).addEventListener("click", () => {
+                carrito.push({ nombre: data.nombre, precio: parseFloat(data.precio) });
+                actualizarCarrito();
+                alert("Agregado: " + data.nombre);
+            });
+        }
     });
 }
 
-// 3. INICIALIZACIÓN
+// INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Aseguramos que el carrito se pinte apenas abre la web
     actualizarCarrito(); 
-    
-    // 2. Cargamos los productos desde Firebase
     await mostrarTiendaPublica("Todos");
-    
-    // 3. Generamos los filtros dinámicos basados en lo cargado
     generarFiltros();
-    
 });
