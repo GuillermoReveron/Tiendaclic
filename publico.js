@@ -8,7 +8,44 @@ const db = getFirestore(app);
 let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 let todosLosProductos = [];
 
-// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO (CORREGIDA)
+// NUEVA FUNCIÓN: Generar botones de filtro dinámicamente
+function generarFiltros() {
+    const contenedorFiltros = document.getElementById("contFiltros");
+    if (!contenedorFiltros) return;
+
+    // Extraemos categorías únicas (quitando duplicados)
+    const categorias = ["Todos", ...new Set(todosLosProductos.map(p => p.categoria || "Sin categoría"))];
+
+    contenedorFiltros.innerHTML = ""; 
+
+    categorias.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.innerText = cat;
+        btn.className = "btn-filtro";
+        btn.addEventListener('click', () => mostrarTiendaPublica(cat));
+        contenedorFiltros.appendChild(btn);
+    });
+}
+
+// NUEVA FUNCIÓN: Generar y abrir WhatsApp
+function enviarPorWhatsApp() {
+    let mensaje = "¡Hola! Quiero hacer el siguiente pedido:%0A%0A";
+    let total = 0;
+
+    carrito.forEach(p => {
+        mensaje += `• ${p.nombre}: $${p.precio}%0A`;
+        total += p.precio;
+    });
+
+    mensaje += `%0A*Total: $${total}*`;
+    
+    const numeroWhatsApp = "5492281310771"; 
+    const url = `https://wa.me/${numeroWhatsApp}?text=${mensaje}`;
+    
+    window.open(url, '_blank');
+}
+
+// 1. FUNCIÓN PARA ACTUALIZAR LA VISTA DEL CARRITO
 function actualizarCarrito() {
     const contenedorCarrito = document.getElementById("contenedorCarrito");
     const totalDiv = document.getElementById("totalCarrito");
@@ -16,7 +53,7 @@ function actualizarCarrito() {
     localStorage.setItem("carrito", JSON.stringify(carrito));
     
     if (contenedorCarrito) {
-        contenedorCarrito.innerHTML = ""; // Limpiamos el contenedor
+        contenedorCarrito.innerHTML = ""; 
         
         if (carrito.length === 0) {
             contenedorCarrito.innerHTML = "<p>Tu carrito está vacío.</p>";
@@ -27,12 +64,10 @@ function actualizarCarrito() {
                 
                 itemDiv.innerHTML = `<span>${p.nombre} - $${p.precio}</span>`;
                 
-                // Botón "X" visible y preciso
                 const btnEliminar = document.createElement("button");
                 btnEliminar.innerText = "✕";
                 btnEliminar.style = "background: #dc3545; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;";
                 
-                // Evento directo sin usar onclick global
                 btnEliminar.addEventListener("click", () => {
                     carrito.splice(index, 1);
                     actualizarCarrito();
@@ -41,6 +76,12 @@ function actualizarCarrito() {
                 itemDiv.appendChild(btnEliminar);
                 contenedorCarrito.appendChild(itemDiv);
             });
+
+            const btnWpp = document.createElement("button");
+            btnWpp.innerText = "Enviar pedido por WhatsApp 🛒";
+            btnWpp.style = "margin-top: 15px; background: #25d366; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 5px; width: 100%; font-weight: bold;";
+            btnWpp.addEventListener("click", enviarPorWhatsApp);
+            contenedorCarrito.appendChild(btnWpp);
         }
     }
     
@@ -88,11 +129,14 @@ async function mostrarTiendaPublica(categoria = "Todos") {
 }
 
 // 3. INICIALIZACIÓN
-document.addEventListener("DOMContentLoaded", () => {
-    actualizarCarrito();
-    mostrarTiendaPublica("Todos");
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Aseguramos que el carrito se pinte apenas abre la web
+    actualizarCarrito(); 
     
-    document.querySelectorAll('.btn-filtro').forEach(btn => {
-        btn.addEventListener('click', (e) => mostrarTiendaPublica(e.target.innerText));
-    });
+    // 2. Cargamos los productos desde Firebase
+    await mostrarTiendaPublica("Todos");
+    
+    // 3. Generamos los filtros dinámicos basados en lo cargado
+    generarFiltros();
+    
 });
